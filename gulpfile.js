@@ -10,7 +10,7 @@ var main = destDir + '/main/index.js';
 
 gulp.task('test', function() {
     testDirs.forEach(function(dir) {
-        return gulp.src(dir + '/**/*.js', {read: false})
+        return gulp.src(destDir + '/' + dir + '/**/*.js', {read: false})
                    .pipe(mocha({reporter: 'spec'}));
     });
 });
@@ -27,13 +27,10 @@ gulp.task('jshint', function() {
     });
 });
 
-gulp.task('copy', ['clean'], function() {
+gulp.task('build', ['jshint', 'clean', 'test'], function(callback) {
     sourceDirs.concat(testDirs) .forEach(function(dir) {
         gulp.src(dir + '/**/*.js', {base: '.'}).pipe(gulp.dest(destDir));
     });
-});
-
-gulp.task('build', ['jshint', 'test', 'clean', 'copy'], function(callback) {
     callback(); 
 });
 

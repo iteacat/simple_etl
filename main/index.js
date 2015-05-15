@@ -8,6 +8,7 @@ var logger = require('../common/logger');
 var config = require('../config/index');
 var etlCommon = require('../common/etlCommon');
 var loadShapeFile = require('../api/loadShapeFile');
+var loadLocationsFile = require('../api/loadLocationsFile');
 
 
 logger.info(config);
@@ -24,7 +25,8 @@ async.series([
             callback(err);
         })
     },
-    loadShapeFile
+    loadShapeFile,
+    loadLocationsFile
 ], function (err) {
     if (err) logger.error(err);
     else logger.info('simple-etl DONE :)')
