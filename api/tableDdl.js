@@ -78,3 +78,5 @@ var CREATE_LOCATIONS_SQL =
 exports.createNYParkingSignsTable = function(callback) {
     createTable(CREATE_NYPARKING_SIGNS_SQL, callback);
 };
+
+exports.NYPARKING = "NYPARKING_SIGNS";
