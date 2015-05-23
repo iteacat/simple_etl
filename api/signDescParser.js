@@ -22,6 +22,8 @@ function dayOfWeekToInt(dayOfWeek) {
         case 'THURSDAY':
             return MINUTES_OF_DAY * 3;
         case 'FRI':
+        case 'FR':
+        case 'FR I':
         case 'FRIDAY':
             return MINUTES_OF_DAY * 4;
         case 'SAT':
@@ -42,7 +44,7 @@ function dayOfWeekToInt(dayOfWeek) {
 // 10PM - MIDNIGHT
 // 8:30AM - NOON
 // 8 - NOON
-exports.timeFrameToInt = function (timeRange) {
+var timeFrameToInt = function (timeRange) {
     if (!timeRange || !timeRange.from || !timeRange.to) {
         logger.error('Invalid time range input %s', timeRange);
         return -1;
@@ -92,36 +94,81 @@ exports.timeFrameToInt = function (timeRange) {
     return [from, to];
 }
 
+var getTimeFrame = function (dayOfWeek, timeFrame) {
+    var ret = timeFrameToInt(timeFrame);
+    var dayOfWeekInt = dayOfWeekToInt(dayOfWeek)
+    ret[0] += dayOfWeekInt;
+    ret[1] += dayOfWeekInt;
+    return ret;
+};
+
 // NO PARKING <DAY> [<DAY> …] <TIME>-<TIME>
-function match1(str) {
+var match1 = function (str) {
     var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING))/g;
     var regTimeRange = /((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)-((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)/g;
     var regWeekDayRange = /((?:MON|MONDAY|TUES|TUESDAY|WED|WEDNESDAY|THURS|THURSDAY|FRI|FRIDAY|SAT|SATURDAY|SUN|SUNDAY)-{1,1}(?:MON|MONDAY|TUES|TUESDAY|WED|WEDNESDAY|THURS|THURSDAY|FRI|FRIDAY|SAT|SATURDAY|SUN|SUNDAY){1,1})/g;
-    var regWeekDay = /(?:^|\s)(MON|MONDAY|TUES|TUESDAY|WED|WEDNESDAY|THURS|THURSDAY|FRI|FRIDAY|SAT|SATURDAY|SUN|SUNDAY)(?:\s|$)/g;
+    var regWeekDay = /\b(MONDAY|MON|TUESDAY|TUES|WEDNESDAY|WED|THURSDAY|THURS|FRIDAY|FRI|FR\sI|FR|SATURDAY|SAT|SUNDAY|SUN)\b/g;
+
 
     var ret1;
+    var index = 0;
 
     var types = [];
     while ((ret1 = regType.exec(str)) !== null) {
         types.push(ret1[1]);
     }
+    if (types.length !== 1)
+        return null;
 
     var timeRange = [];
     while ((ret1 = regTimeRange.exec(str)) !== null) {
         timeRange.push({from: ret1[1], to: ret1[2]});
     }
+    if (timeRange.length !== 1)
+        return null;
 
     var weekDays = [];
     while ((ret1 = regWeekDay.exec(str)) !== null) {
         weekDays.push(ret1[1]);
     }
+    if (weekDays.length < 1)
+        return null;
 
-    if (types.length === 1 && timeRange.length === 1 && weekDays.length > 0) {
-        console.log(types, timeRange, weekDays);
-    } else {
-        console.log("didn't match");
+    // ignore MON THRU FRI
+    var ignoreThru = regWeekDay.source + /\s+/.source + 'THRU' + /\s+/.source + regWeekDay.source;
+    var regIgnoreThru = new RegExp(ignoreThru, 'g');
+    if (regIgnoreThru.test(str))
+        return null;
+
+    // ignore MON-FRI or MON - FRI
+    var ignoreDash = regWeekDay.source + /\s*/.source + '-' + /\s*/.source + regWeekDay.source;
+    var regIgnoreDash = new RegExp(ignoreDash, 'g');
+    if (regIgnoreDash.test(str))
+        return null;
+
+    // ignore EXCEPT MON
+    var ignoreExcept = /\bEXCEPT\b/.source + /\s+/.source + regWeekDay.source;
+    var regIgnoreExcept = new RegExp(ignoreExcept, 'g');
+    if (regIgnoreExcept.test(str))
+        return null;
+
+    // ignore INCLUDING SUNDAY
+    var ignoreIncluding = /INCLUDING SUNDAY|SUN/g;
+    if (ignoreIncluding.test(str))
+        return null;
+
+    var timeFrames = [];
+    weekDays.forEach(function (dayOfWeek) {
+        timeFrames.push(getTimeFrame(dayOfWeek, timeRange[0]));
+    });
+
+    return {
+        type: types[0],
+        timeFrames: timeFrames
     }
 }
 
-match1("NIGHT REGULATION  NO PARKING  3AM-6AM TUES THURS SAT");
-
+module.exports = {
+    timeFrameToInt: timeFrameToInt,
+    match1: match1
+};

@@ -8,7 +8,6 @@ var etlCommon = require('../common/etlCommon');
 var logger = require('../common/logger');
 var tableDdl = require('../api/tableDdl');
 var path = require('path');
-var async = require('async');
 var util = require('util');
 var stream = require('stream')
 
@@ -71,7 +70,6 @@ function buildQuery(tableConfig) {
         });
         cols.splice(0, 1);
     }
-    return util.format("select %s from %s limit 15", cols, tableConfig.name);
+    return util.format("select %s from %s ", cols, tableConfig.name);
 }
 
-this.extractNyparking(function(err) {console.log('fjsdkalgjl');process.exit(0)})

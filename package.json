@@ -17,6 +17,7 @@
     "lodash": "^3.8.0",
     "mysql": "^2.6.2",
     "shp2json": "^1.1.0",
+    "split": "^0.3.3",
     "strip-bom": "^1.0.0"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "gulp-watch": "^4.2.4",
     "jshint-stylish": "^1.0.2",
     "merge-stream": "^0.1.7",
+    "mocha": "^2.2.5",
     "should": "^6.0.1"
   }
 }
