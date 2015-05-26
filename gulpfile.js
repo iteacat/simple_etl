@@ -32,7 +32,7 @@ gulp.task('build', ['jshint', 'clean'], function() {
 
 gulp.task('test', ['build'], function() {
     var tasks = testDirs.map(function(dir) {
-        return gulp.src(destDir + '/' + dir + '/**/*.js', {read: false})
+        return gulp.src(destDir + '/' + dir + '/**/*.test.js', {read: false})
                    .pipe(mocha({reporter: 'spec'}));
     });
 
