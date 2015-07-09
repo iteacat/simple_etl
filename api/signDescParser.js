@@ -1,4 +1,5 @@
 /**
+ * This parser uses a cascade of matchers. For example, matcher2 is used only when matcher1 didn't match the line etc.
  *
  * Created by yin on 5/16/15.
  */
@@ -7,6 +8,7 @@ var logger = require('../common/logger');
 var assert = require('assert');
 
 var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:HOUR PARKING)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
+var regHour = /(\b\d{1,2})\s+(?:(?:\bHOUR PARKING\b)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
 var regTimeRange = /((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)\s*(?:-|TO)\s*((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)/g;
 var regWeekDay = /\b(MONDAY|MON|TUESDAY|TUES|WEDNESDAY|WED|THURSDAY|THURS|FRIDAY|FRI|FR\sI|FR|SATURDAY|SAT|SUNDAY|SUN)\b/g;
 
@@ -151,6 +153,7 @@ var parseTimeRanges = function(str) {
 /*
  * input: ...TUES THURS FRI MON - FRI SAT SUN...
  * output: [[TUES THURS FRI], [SAT SUN]]
+ *
  * */
 var parseDayOfWeekList = function(str) {
     var copyStr = str;
@@ -266,7 +269,8 @@ var parseAll = function(str) {
         ret = ret.concat(temp);
     }
 
-    assert(ret.length > 1);
+    if (ret.length < 1)
+        return null;
 
     ret.sort(function(a, b) {
         return a.index - b.index;
@@ -303,10 +307,6 @@ var parseAll = function(str) {
 
     return calculatedTimeFrames;
 }
-
-var str = '2 HOUR PARKING 9AM-4PM 7PM-10PM MON TUES FRI 9AM-10PM EXCEPT SATURDAY';
-//var str = '2 HOUR PARKING MON-FRI 9:30AM-4PM MONDAY TUES 10-11PM';
-console.log(str, '\n', parseAll(str));
 
 var replaceIncludingSunday = function(str) {
     return str.replace(/INCLUDING\s+(?:SUNDAY|SUN)/, 'SUN MON TUES WED THURS FRI SAT');
@@ -367,33 +367,43 @@ var generalMatch = function (str) {
 
     return {
         type: types[0],
-        timeFrames: timeFrames
+        timeFrames: timeFrames,
+        hour: null
     }
 }
 
 var match1 = function(str) {
     if (!str)
         return null;
-
-    str = replaceIncludingSunday(str);
-    str = removeCommercialVehicles(str);
+    str = preprocess(str);
 
     var ret = generalMatch(str);
 
     if (!ret)
         return null;
 
-    var hour = null;
-    if ((hour =/(\b\d{1,2})\s+(?:(?:\bHOUR PARKING\b)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/
-            .exec(str)) !== null) {
-        ret.hour = hour[1];
-    }
+    ret.hour = getSingleHour(str);
 
     return ret;
 }
 
+function getSingleHour(str) {
+    var hours = [];
+    var hour;
+    while ((hour = regHour.exec(str)) !== null) {
+        hours.push(hour[1])
+    }
+    if (hours.length === 1)
+        return hours[0];
+    return null;
+}
+
 // NO PARKING/STOPPING/STANDING ANYTIME
 var match2 = function(str) {
+    if (!str)
+        return null;
+    str = preprocess(str);
+
     var reg = new RegExp(regType.source + /\s+\bANYTIME\b/.source, 'g');
     var types = [];
     var result = null;
@@ -407,37 +417,9 @@ var match2 = function(str) {
 
     return {
         type: types[0],
-        timeFrames: [[0, 1440 * 7]]
+        timeFrames: [[0, 1440 * 7]],
+        hour: null
     };
-}
-
-var matchMultipleTimeFrame = function(str) {
-    if (!str)
-        return null;
-
-    str = replaceIncludingSunday(str);
-
-    var ret1;
-    var types = [];
-    while ((ret1 = regType.exec(str)) !== null) {
-        types.push(ret1[1]);
-    }
-    if (types.length !== 1)
-        return null;
-
-    var timeRange = [];
-    while ((ret1 = regTimeRange.exec(str)) !== null) {
-        timeRange.push({from: ret1[1], to: ret1[2]});
-    }
-    if (timeRange.length !== 1)
-        return null;
-
-    var weekDays = [];
-    while ((ret1 = regWeekDay.exec(str)) !== null) {
-        weekDays.push(ret1[1]);
-    }
-    if (weekDays.length < 1)
-        return null;
 }
 
 var match1Except = function(type, exceptDay, timeRange) {
@@ -449,7 +431,8 @@ var match1Except = function(type, exceptDay, timeRange) {
     }
     return {
         type: type,
-        timeFrames: timeFrames
+        timeFrames: timeFrames,
+        hour: null
     };
 };
 
@@ -460,7 +443,8 @@ var match1Thru = function(type, dayOfWeekFrom, dayOfWeekTo, timeRange) {
     }
     return {
         type: type,
-        timeFrames: timeFrames
+        timeFrames: timeFrames,
+        hour: null
     };
 };
 
@@ -469,9 +453,54 @@ var removeCommercialVehicles = function (str) {
     return tokens.length > 1 ? tokens[1] : str;
 }
 
+var match3 = function(str) {
+    if (!str)
+        return null;
+    str = preprocess(str);
+
+    var timeRanges =  parseAll(str);
+    if (!timeRanges || timeRanges.length === 0)
+        return null;
+
+    var type = getSingleType(str);
+    if (!type)
+        return null;
+
+    var hour = getSingleHour(str);
+
+    return {
+        type: type,
+        timeFrames: timeRanges,
+        hour: hour
+    };
+}
+
+var getSingleType = function(str) {
+    var types = [];
+    var ret1;
+    while ((ret1 = regType.exec(str)) !== null) {
+        types.push(ret1[1]);
+    }
+    if (types.length !== 1)
+        return null;
+
+    return types[0];
+}
+
+var preprocess = function(str) {
+    str = replaceIncludingSunday(str);
+    str = removeCommercialVehicles(str);
+    return str;
+}
+
+var str = '2 HOUR PARKING 9AM-4PM 7PM-10PM MON TUES FRI 9AM-10PM EXCEPT SATURDAY';
+//var str = '2 HOUR PARKING MON-FRI 9:30AM-4PM MONDAY TUES 10-11PM';
+console.log(str, '\n', match3(str));
+
 module.exports = {
     timeFrameToInt: timeFrameToInt,
     parseTimeRanges: parseTimeRanges,
     match1: match1,
-    match2: match2
+    match2: match2,
+    match3: match3
 };

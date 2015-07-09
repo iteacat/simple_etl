@@ -1,5 +1,6 @@
 /**
- * Created by yin on 5/23/15.
+ *
+ * Created by yin on 7/8/15.
  */
 
 var fs = require('fs');
@@ -10,16 +11,17 @@ var stream = require('stream');
 var split = require('split');
 
 var readStream = fs.createReadStream(path.join(process.cwd(), 'tmp', 'nyparking_signs.csv'));
-var writeStream = fs.createWriteStream(path.join(process.cwd(), 'tmp', 'match2.txt'));
+var writeStream = fs.createWriteStream(path.join(process.cwd(), 'tmp', 'match3.txt'));
 
 var filterTransform = new stream.Transform({objectMode: true});
 filterTransform._transform = function (chunk, encoding, done) {
     var tokens = chunk.split(',');
     var signDesc = tokens[8];
-    var result = parser.match1(signDesc);
-    if (!result) {
-        result = parser.match2(signDesc);
+    var result = null;
+    if (!parser.match1(signDesc) && !parser.match2(signDesc)) {
+        result = parser.match3(signDesc);
     }
+
     if (result) {
         this.push(JSON.stringify({origin: signDesc, result: result}) + '\n');
     }
