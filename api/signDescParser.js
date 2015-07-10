@@ -10,7 +10,9 @@ var assert = require('assert');
 var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:HOUR PARKING)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
 var regHour = /(\b\d{1,2})\s+(?:(?:\bHOUR PARKING\b)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
 var regTimeRange = /((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)\s*(?:-|TO)\s*((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)/g;
-var regWeekDay = /\b(MONDAY|MON|TUESDAY|TUES|WEDNESDAY|WED|THURSDAY|THURS|FRIDAY|FRI|FR\sI|FR|SATURDAY|SAT|SUNDAY|SUN)\b/g;
+var regWeekDay = /\b(MONDAY|MON|TUESDAY|TUES|WEDNESDAY|WED|THURSDAY|THURS|FRIDAY|FRI|FR\sI|FR|SATURDAY|SAT|SUNDAY|SUN|SU)\b/g;
+
+var regUncertain1 = /\bNO\b.*\bMETERED\b\s+\bPARKING\b/g;
 
 var dayToInt = {
     "SUNDAY": 0,
@@ -312,6 +314,10 @@ var replaceIncludingSunday = function(str) {
     return str.replace(/INCLUDING\s+(?:SUNDAY|SUN)/, 'SUN MON TUES WED THURS FRI SAT');
 }
 
+var replaceAllDays = function(str) {
+    return str.replace(/ALL\s+DAYS/, 'SUN MON TUES WED THURS FRI SAT');
+}
+
 // NO PARKING/STANDING/STOPPING [<DAY> [TO/THRU/-] […] <TIME>-<TIME>] ...
 var generalMatch = function (str) {
 
@@ -458,6 +464,9 @@ var match3 = function(str) {
         return null;
     str = preprocess(str);
 
+    if (isUncertain1(str))
+        return null;
+
     var timeRanges =  parseAll(str);
     if (!timeRanges || timeRanges.length === 0)
         return null;
@@ -489,13 +498,18 @@ var getSingleType = function(str) {
 
 var preprocess = function(str) {
     str = replaceIncludingSunday(str);
+    str = replaceAllDays(str);
     str = removeCommercialVehicles(str);
     return str;
 }
 
-var str = '2 HOUR PARKING 9AM-4PM 7PM-10PM MON TUES FRI 9AM-10PM EXCEPT SATURDAY';
+var isUncertain1 = function(str) {
+    return regUncertain1.test(str);
+}
+
+var str = 'NO STANDING 7AM-6PM MON THRU FRI 6PM-MIDNIGHT MON THRU FRI METERED  PARKING';
 //var str = '2 HOUR PARKING MON-FRI 9:30AM-4PM MONDAY TUES 10-11PM';
-console.log(str, '\n', match3(str));
+console.log(str, '\n', isUncertain1(str));
 
 module.exports = {
     timeFrameToInt: timeFrameToInt,

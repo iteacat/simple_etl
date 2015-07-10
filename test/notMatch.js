@@ -17,7 +17,7 @@ var filterTransform = new stream.Transform({objectMode: true});
 filterTransform._transform = function (chunk, encoding, done) {
     var tokens = chunk.split(',');
     var signDesc = tokens[8];
-    var result = parser.match1(signDesc) || parser.match2(signDesc);
+    var result = parser.match1(signDesc) || parser.match2(signDesc) || parser.match3(signDesc);
     if (!result) {
         this.push(signDesc + '\n');
     }

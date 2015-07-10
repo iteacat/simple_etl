@@ -9,11 +9,14 @@ var config = require('../config/index');
 var etlCommon = require('../common/etlCommon');
 var loadShapeFile = require('../api/loadShapeFile');
 var loadLocationsFile = require('../api/loadLocationsFile');
+var mkdirp = require('mkdirp');
+var extractor = require('../api/extract');
 
 
 logger.info(config);
 
 async.series([
+    async.apply(mkdirp, path.join(process.env.PWD, tmp)),
     tableDdl.createNYParkingSignsTable,
     function (callback) {
         async.parallel([
@@ -26,7 +29,8 @@ async.series([
         })
     },
     loadShapeFile,
-    loadLocationsFile
+    loadLocationsFile,
+    extractor.extractNyparking
 ], function (err) {
     if (err) logger.error(err);
     else logger.info('simple-etl DONE :)')
