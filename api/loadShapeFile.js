@@ -15,13 +15,15 @@ var queryBuffer = [];
 var updateCounter = 0;
 
 function updateDb(buffer, callback) {
+    console.log('updateDb is called with buffer size ', buffer.length);
     if (buffer.length === 0) {
-        callback();
-        return;
+        return callback();
     }
 
     var SQL_INSERT_NYPARKING_SIGNS = buildInsertNyparkingSignsQuery(buffer);
+    console.log('requiring db connection...');
     etlCommon.getConnection(function (err, conn) {
+        console.log('Got DB connection');
         if (err) {
             logger.error('Cao! Error on db connection: ', err);
             process.exit(995);
@@ -98,6 +100,7 @@ module.exports = function (callback) {
             }
 
             queryBuffer.push(sign);
+            console.log('current sign : ', sign);
             if (queryBuffer.length > 100) {
                 stream.pause();
                 updateDb(queryBuffer, function () {

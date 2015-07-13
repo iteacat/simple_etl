@@ -4,12 +4,14 @@
  */
 
 module.exports = {
-  appName: 'simpleEtlSand'
+    appName: 'simpleEtlSand'
 
-  ,mysqlConfig: {
-    host: 'localhost',
-    user: 'root',
-    password: null,
-    port: '3306'
-  }
+    ,mysqlConfig: {
+        host: 'localhost',
+        user: 'root',
+        password: null,
+        database: 'cat1ny',
+        connectionLimit : 20,
+        port: '3306'
+    }
 };

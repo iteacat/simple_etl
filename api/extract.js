@@ -34,7 +34,7 @@ nyparkingTransformer._transform = function (chunk, encoding, done) {
 //   columns: [A, B, C, D] //
 // }
 // If columnes is undefined or empty, use all columns
-exports.extract = function (tableConfig, to, transformer, callback) {
+var extract = function (tableConfig, to, transformer, callback) {
     var targetStream = fs.createWriteStream(to, {flags: 'w'});
 
     etlCommon.getConnection(function (err, conn) {
@@ -52,12 +52,12 @@ exports.extract = function (tableConfig, to, transformer, callback) {
     });
 }
 
-exports.extractNyparking = function (callback) {
+var extractNyparking = function (callback) {
     var tableConfig = {
         name: tableDdl.NYPARKING
     }
     var dest = path.join(process.env.PWD, 'tmp', 'nyparking_signs.csv');
-    this.extract(tableConfig, dest, nyparkingTransformer, callback);
+    extract(tableConfig, dest, nyparkingTransformer, callback);
 }
 
 function buildQuery(tableConfig) {
@@ -73,3 +73,6 @@ function buildQuery(tableConfig) {
     return util.format("select %s from %s ", cols, tableConfig.name);
 }
 
+module.exports = {
+    extractNyparking: extractNyparking
+};

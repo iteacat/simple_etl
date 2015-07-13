@@ -1,5 +1,4 @@
 var _ = require('lodash');
-var logger = require('../common/logger');
 var path = require('path');
 
 var all = {

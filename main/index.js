@@ -11,12 +11,13 @@ var loadShapeFile = require('../api/loadShapeFile');
 var loadLocationsFile = require('../api/loadLocationsFile');
 var mkdirp = require('mkdirp');
 var extractor = require('../api/extract');
-
+var generateParkingRule = require('../api/generateParkingRule');
+var path = require('path');
 
 logger.info(config);
-
+console.time('TotalExecutionTime');
 async.series([
-    async.apply(mkdirp, path.join(process.env.PWD, tmp)),
+    async.apply(mkdirp, path.join(process.env.PWD, 'tmp')),
     tableDdl.createNYParkingSignsTable,
     function (callback) {
         async.parallel([
@@ -30,9 +31,11 @@ async.series([
     },
     loadShapeFile,
     loadLocationsFile,
-    extractor.extractNyparking
+    extractor.extractNyparking,
+    generateParkingRule
 ], function (err) {
     if (err) logger.error(err);
     else logger.info('simple-etl DONE :)')
+    console.timeEnd('TotalExecutionTime');
     process.exit(0);
 });

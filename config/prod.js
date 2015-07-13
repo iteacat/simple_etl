@@ -9,6 +9,7 @@ module.exports = {
     ,mysqlConfig: {
         host: 'cat1ny.ch67iaxvc4uj.us-east-1.rds.amazonaws.com',
         user: 'iteacat',
-        password: 'ChafNod9'
+        password: 'ChafNod9',
+        database: 'cat1ny'
     }
 };

@@ -7,12 +7,22 @@
 var logger = require('../common/logger');
 var assert = require('assert');
 
-var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:HOUR PARKING)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
+var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:HOUR PARKING)|(?:\bHMP\b)|(?:\b(?:HR|HOUR)\s+(?:METERED|MUNI-METER) PARKING\b))/g;
+var regHourMeteredParking = /((?:\bHMP\b)|(?:\b(?:HR|HOUR)\s+(?:METERED|MUNI-METER) PARKING\b))/g;
+var regHourParking = /HOUR\s+PARKING/g;
 var regHour = /(\b\d{1,2})\s+(?:(?:\bHOUR PARKING\b)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
 var regTimeRange = /((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)\s*(?:-|TO)\s*((?:\d{1,2}:{0,1}\d{0,2}(?:AM|PM){0,1})|MIDNIGHT|NOON)/g;
 var regWeekDay = /\b(MONDAY|MON|TUESDAY|TUES|WEDNESDAY|WED|THURSDAY|THURS|FRIDAY|FRI|FR\sI|FR|SATURDAY|SAT|SUNDAY|SUN|SU)\b/g;
 
 var regUncertain1 = /\bNO\b.*\bMETERED\b\s+\bPARKING\b/g;
+
+var TYPE = {
+    HP: "HOUR PARKING",
+    HMP: "HMP",
+    NP: "NO PARKING",
+    NSTD: "NO STANDING",
+    NSP: "NO STOPPING"
+}
 
 var dayToInt = {
     "SUNDAY": 0,
@@ -314,6 +324,14 @@ var replaceIncludingSunday = function(str) {
     return str.replace(/INCLUDING\s+(?:SUNDAY|SUN)/, 'SUN MON TUES WED THURS FRI SAT');
 }
 
+var normalizeHourParking = function(str) {
+    return str.replace(regHourParking, TYPE.HP);
+}
+
+var normalizeHourMeteredParking = function(str) {
+    return str.replace(regHourMeteredParking, TYPE.HMP);
+}
+
 var replaceAllDays = function(str) {
     return str.replace(/ALL\s+DAYS/, 'SUN MON TUES WED THURS FRI SAT');
 }
@@ -500,6 +518,8 @@ var preprocess = function(str) {
     str = replaceIncludingSunday(str);
     str = replaceAllDays(str);
     str = removeCommercialVehicles(str);
+    str = normalizeHourMeteredParking(str);
+    str = normalizeHourParking(str);
     return str;
 }
 
@@ -512,8 +532,6 @@ var str = 'NO STANDING 7AM-6PM MON THRU FRI 6PM-MIDNIGHT MON THRU FRI METERED  P
 console.log(str, '\n', isUncertain1(str));
 
 module.exports = {
-    timeFrameToInt: timeFrameToInt,
-    parseTimeRanges: parseTimeRanges,
     match1: match1,
     match2: match2,
     match3: match3
