@@ -27,8 +27,10 @@ filterTransform._transform = function (chunk, encoding, done) {
     var result = parser.match1(signDesc) || parser.match2(signDesc) || parser.match3();
 
     var line = {
-        x: tokens[0],
-        y: tokens[1],
+        loc: {
+            type: "Point",
+            coordinates: [parseFloat(tokens[1]), parseFloat(tokens[0])]
+        },
         boro: tokens[2],
         orderNumber: tokens[3],
         sequenceNumber: tokens[4],
@@ -53,8 +55,8 @@ filterTransform._transform = function (chunk, encoding, done) {
 }
 
 module.exports = function (callback) {
-    var readStream = fs.createReadStream(path.join(process.cwd(), 'tmp', 'nyparking_signs.csv'));
-    var writeStream = fs.createWriteStream(path.join(process.cwd(), 'tmp', 'nyparking_signs_with_times.txt'));
+    var readStream = fs.createReadStream(config.nyparkingDumpFile);
+    var writeStream = fs.createWriteStream(config.nyparkingDumpFileWithTimes);
 
     var finalStream = readStream.pipe(split()).pipe(filterTransform).pipe(writeStream);
 

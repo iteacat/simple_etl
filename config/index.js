@@ -10,6 +10,13 @@ var all = {
         connectionLimit : 50,
         multipleStatements : true
     }
+
+    ,mongoDbConfig: {
+        baseUrl: 'mongodb://localhost:27017/cat1ny?',
+        poolSize: 100,
+        autoReconnect: true
+    }
+
     ,signsFile: path.join(process.cwd(), 'tmp', 'signs.csv')
     ,signsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/locations.CSV'
 
@@ -19,6 +26,8 @@ var all = {
     ,shapeFile: path.join(process.cwd(), 'tmp', 'shapefile.zip')
     ,shapeFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/Parking_Regulation_Shapefile.zip'
 
+    ,nyparkingDumpFile: path.join(process.cwd(), 'tmp', 'nyparking_signs.csv')
+    ,nyparkingDumpFileWithTimes: path.join(process.cwd(), 'tmp', 'nyparking_signs_with_times.txt')
 };
 
 var config= _.merge(

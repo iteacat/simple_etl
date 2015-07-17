@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "nyparking etl",
   "main": "index.js",
-  "repository":"null",
+  "repository": "null",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --stack-size=2000000 ./main/index"
@@ -14,9 +14,11 @@
     "JSONStream": "^1.0.3",
     "async": "^0.9.0",
     "bunyan": "^1.3.5",
+    "event-stream": "^3.3.1",
     "line-by-line": "^0.1.3",
     "lodash": "^3.8.0",
     "mkdirp": "^0.5.1",
+    "mongodb": "^2.0.39",
     "mysql": "^2.6.2",
     "shp2json": "^1.1.0",
     "split": "^0.3.3",
