@@ -18,10 +18,10 @@ var all = {
     }
 
     ,signsFile: path.join(process.cwd(), 'tmp', 'signs.csv')
-    ,signsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/locations.CSV'
+    ,signsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/signs.CSV'
 
     ,locationsFile: path.join(process.cwd(), 'tmp', 'locations.csv')
-    ,locationsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/signs.CSV'
+    ,locationsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/locations.CSV'
 
     ,shapeFile: path.join(process.cwd(), 'tmp', 'shapefile.zip')
     ,shapeFileUnzipped: path.join(process.cwd(), 'tmp', 'Parking_Regulation_Shapefile', 'Parking_Regulations.shp')

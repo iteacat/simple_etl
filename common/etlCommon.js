@@ -32,21 +32,16 @@ exports.getConnection = function (callback) {
 };
 
 exports.downloadFile = function (from, to, callback) {
-    if (fs.existsSync(to)) {
-        logger.info('No download. Use existing file ', to);
-        callback(null);
-    } else {
-        var file = fs.createWriteStream(to);
-        http.get(from, function (response) {
-            response.pipe(stripBom.stream()).pipe(file);
-            file.on('finish', function () {
-                file.close(function () {
-                    callback(null);
-                });
-            });
-            file.on('error', function (err) {
-                callback(err);
+    var file = fs.createWriteStream(to);
+    http.get(from, function (response) {
+        response.pipe(stripBom.stream()).pipe(file);
+        file.on('finish', function () {
+            file.close(function () {
+                callback(null);
             });
         });
-    }
+        file.on('error', function (err) {
+            callback(err);
+        });
+    });
 };
