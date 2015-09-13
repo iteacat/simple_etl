@@ -3,7 +3,6 @@
  */
 
 var async = require('async');
-var tableDdl = require('../api/tableDdl');
 var logger = require('../common/logger');
 var config = require('../config/index');
 var etlCommon = require('../common/etlCommon');
@@ -18,31 +17,34 @@ var nyparkingDao = require('../api/nyparkingDao');
 
 logger.info(config);
 console.time('TotalExecutionTime');
-async.series([
-    /*
-    async.apply(mkdirp, path.join(process.env.PWD, 'tmp')),
-    tableDdl.createNYParkingSignsTable,
-    function (callback) {
-        async.parallel([
-            // from -> to
-            async.apply(etlCommon.downloadFile, config.signsFileUrl, config.signsFile),
-            async.apply(etlCommon.downloadFile, config.shapeFileUrl, config.shapeFile),
-            async.apply(etlCommon.downloadFile, config.locationsFileUrl, config.locationsFile),
-        ], function (err) {
-            callback(err);
-        })
-    },
-    loadShapeFile,
-    loadLocationsFile,
-    extractor.extractNyparking,
-     */
-    generateParkingRule,
-    nyparkingDao.dropNypCollection,
-    async.apply(populateParkingSignsToDb, config.nyparkingDumpFileWithTimes, nyparkingDao),
-    nyparkingDao.createLocationIndex
-], function (err) {
-    if (err) logger.error(err);
-    else logger.info('simple-etl DONE :)')
-    console.timeEnd('TotalExecutionTime');
-    process.exit(0);
-});
+async.series(
+    [
+        async.apply(mkdirp, path.join(process.env.PWD, 'tmp')),
+        function (callback) {
+            async.parallel([
+                // from -> to
+                async.apply(etlCommon.downloadFile, config.signsFileUrl, config.signsFile),
+                async.apply(etlCommon.downloadFile, config.shapeFileUrl, config.shapeFile),
+                async.apply(etlCommon.downloadFile, config.locationsFileUrl, config.locationsFile)
+            ], function (err) {
+                if (err)
+                    console.error(err);
+                callback(err);
+            })
+        },
+        extractor.unzipShapeFile,
+        loadShapeFile,
+        generateParkingRule,
+        nyparkingDao.dropNypCollection,
+        async.apply(populateParkingSignsToDb, config.nyparkingDumpFileWithTimes, nyparkingDao),
+        nyparkingDao.createLocationIndex
+    ],
+    function (err) {
+        if (err)
+            logger.error(err);
+        else
+            logger.info('simple-etl DONE :)')
+        console.timeEnd('TotalExecutionTime');
+        process.exit(0);
+    }
+);

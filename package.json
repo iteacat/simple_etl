@@ -20,9 +20,10 @@
     "mkdirp": "^0.5.1",
     "mongodb": "^2.0.39",
     "mysql": "^2.6.2",
-    "shp2json": "^1.1.0",
+    "shapefile-stream": "0.0.4",
     "split": "^0.3.3",
-    "strip-bom": "^1.0.0"
+    "strip-bom": "^1.0.0",
+    "unzip": "^0.1.11"
   },
   "devDependencies": {
     "chai": "^2.3.0",

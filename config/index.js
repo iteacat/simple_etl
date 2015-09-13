@@ -24,6 +24,7 @@ var all = {
     ,locationsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/signs.CSV'
 
     ,shapeFile: path.join(process.cwd(), 'tmp', 'shapefile.zip')
+    ,shapeFileUnzipped: path.join(process.cwd(), 'tmp', 'Parking_Regulation_Shapefile', 'Parking_Regulations.shp')
     ,shapeFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/Parking_Regulation_Shapefile.zip'
 
     ,nyparkingDumpFile: path.join(process.cwd(), 'tmp', 'nyparking_signs.csv')

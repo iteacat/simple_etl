@@ -527,10 +527,6 @@ var isUncertain1 = function(str) {
     return regUncertain1.test(str);
 }
 
-var str = 'NO STANDING 7AM-6PM MON THRU FRI 6PM-MIDNIGHT MON THRU FRI METERED  PARKING';
-//var str = '2 HOUR PARKING MON-FRI 9:30AM-4PM MONDAY TUES 10-11PM';
-console.log(str, '\n', isUncertain1(str));
-
 module.exports = {
     match1: match1,
     match2: match2,

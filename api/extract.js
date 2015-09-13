@@ -10,6 +10,8 @@ var tableDdl = require('../api/tableDdl');
 var path = require('path');
 var util = require('util');
 var stream = require('stream')
+var unzip = require('unzip');
+var config = require('../config');
 
 var nyparkingTransformer = new stream.Transform({objectMode: true});
 nyparkingTransformer._transform = function (chunk, encoding, done) {
@@ -73,6 +75,14 @@ function buildQuery(tableConfig) {
     return util.format("select %s from %s ", cols, tableConfig.name);
 }
 
+var unzipShapeFile = function (callback) {
+    var stream = fs.createReadStream(config.shapeFile).pipe(unzip.Extract({ path:'tmp/'}));
+    stream.on('close', function() {
+        callback();
+    });
+}
+
 module.exports = {
-    extractNyparking: extractNyparking
+    extractNyparking: extractNyparking,
+    unzipShapeFile: unzipShapeFile
 };

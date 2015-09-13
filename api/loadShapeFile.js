@@ -3,42 +3,61 @@
  * Created by yin on 5/14/15.
  */
 
+"use strict";
 var util = require('util');
-var shp2json = require('shp2json');
+var shapefile = require('shapefile-stream');
 var fs = require('fs');
 var JSONStream = require('JSONStream');
+var linebyline = require('line-by-line');
 var config = require('../config/index');
 var etlCommon = require('../common/etlCommon');
 var logger = require('../common/logger');
+var stream = require('stream');
 
 var queryBuffer = [];
 var updateCounter = 0;
+var locationMap;
 
-function updateDb(buffer, callback) {
-    console.log('updateDb is called with buffer size ', buffer.length);
-    if (buffer.length === 0) {
-        return callback();
+var signsTransformer = new stream.Transform({objectMode: true});
+signsTransformer._transform = function (chunk, encoding, done) {
+
+    var each = JSON.parse(JSON.stringify(chunk));
+    if (!isValid(each)) done();
+    var sign = {
+        point: {x: each.geometry.coordinates[1], y: each.geometry.coordinates[0]},
+        boro: each.properties.SG_KEY_BOR,
+        orderNumber: each.properties.SG_ORDER_N,
+        sequenceNumber: Number(each.properties.SG_SEQNO_N),
+        signArrow: each.properties.SG_ARROW_D,
+        signDist: Number(each.properties.SR_DIST),
+        signId: each.properties.SG_MUTCD_C,
+        signDesc: each.properties.SIGNDESC1
+    };
+    if (sign.signArrow === null)
+        sign.signArrow = '';
+
+    if (sign.signDesc === null) {
+        sign.signDesc = '';
+    } else {
+        sign.signDesc = sign.signDesc.replace(/'/g, "''");
     }
 
-    var SQL_INSERT_NYPARKING_SIGNS = buildInsertNyparkingSignsQuery(buffer);
-    console.log('requiring db connection...');
-    etlCommon.getConnection(function (err, conn) {
-        console.log('Got DB connection');
-        if (err) {
-            logger.error('Cao! Error on db connection: ', err);
-            process.exit(995);
-        }
-        conn.query(SQL_INSERT_NYPARKING_SIGNS, function (err, result) {
-            if (err) {
-                if (err.errno !== 1062)
-                    logger.error('error writing to db for %s', SQL_INSERT_NYPARKING_SIGNS, err);
-            } else {
-                updateCounter += result.affectedRows;
-            }
-            conn.release();
-            callback();
-        });
-    });
+    sign.side = locationMap.get(JSON.stringify({boro: sign.boro, orderNumber: sign.orderNumber})) || '';
+
+    var line = util.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+        sign.point.x,
+        sign.point.y,
+        sign.boro,
+        sign.orderNumber,
+        sign.sequenceNumber,
+        sign.signId,
+        sign.signDist,
+        sign.signArrow,
+        sign.signDesc,
+        sign.side);
+
+    this.push(line);
+    done();
 }
 
 var buildInsertNyparkingSignsQuery = function (localBuffer) {
@@ -72,49 +91,42 @@ var isValid = function (sign) {
     return true;
 }
 
-// main starts
+var load = function (callback) {
+    var targetStream = fs.createWriteStream(config.nyparkingDumpFile, {flags: 'w'});
+    loadLocationFileToCache(config.locationsFile, function (error, result) {
+        if (error) {
+            console.error(error);
+            process.exit(1);
+        }
 
-module.exports = function (callback) {
-    var stream = shp2json(fs.createReadStream(config.shapeFile)).pipe(JSONStream.parse(['features', true]));
-    stream
-        .on('data', function (data) {
-            var each = JSON.parse(JSON.stringify(data));
-            if (!isValid(each)) return;
-            var sign = {
-                point: {x: each.geometry.coordinates[1], y: each.geometry.coordinates[0]},
-                boro: each.properties.SG_KEY_BOR,
-                orderNumber: each.properties.SG_ORDER_N,
-                sequenceNumber: Number(each.properties.SG_SEQNO_N),
-                signArrow: each.properties.SG_ARROW_D,
-                signDist: Number(each.properties.SR_DIST),
-                signId: each.properties.SG_MUTCD_C,
-                signDesc: each.properties.SIGNDESC1
-            };
-            if (sign.signArrow === null)
-                sign.signArrow = '';
-
-            if (sign.signDesc === null) {
-                sign.signDesc = '';
-            } else {
-                sign.signDesc = sign.signDesc.replace(/'/g, "''");
-            }
-
-            queryBuffer.push(sign);
-            console.log('current sign : ', sign);
-            if (queryBuffer.length > 100) {
-                stream.pause();
-                updateDb(queryBuffer, function () {
-                    queryBuffer.length = 0;
-                    stream.resume();
-                });
-            }
-        })
-        .on('end', function() {
-            updateDb(queryBuffer, function () {
-                logger.info('Table nyaprking_signs loaded. # of rows: %d', updateCounter);
-                queryBuffer.length = 0;
-                callback(null);
+        locationMap = result;
+        console.log('reading shape file');
+        var stream = shapefile.createReadStream(config.shapeFileUnzipped).pipe(signsTransformer).pipe(targetStream);
+        stream
+            .on('close', function () {
+                console.log('%s generated.', config.nyparkingDumpFile);
+                callback();
             });
-        });
+    })
 }
 
+var loadLocationFileToCache = function (locationFileDir, cb) {
+    let locationMap = new Map();
+
+    let locStream = new linebyline(config.locationsFile);
+
+    locStream
+        .on('line', function (data) {
+            let line = data.split(',');
+            locationMap.set(JSON.stringify({boro: line[0], orderNumber: line[1]}), line[5]);
+        })
+        .on('error', function (err) {
+            console.error('error on parsing line: ', err);
+        })
+        .on("end", function () {
+            console.log('Location file loaded to cache. Size: ', locationMap.size);
+            cb(null, locationMap);
+        });
+};
+
+module.exports = load;
