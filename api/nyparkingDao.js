@@ -42,7 +42,8 @@ var dropNypCollection = function(cb) {
         assert.equal(err, null, "failed to get db " + err);
 
         db.dropCollection(nypCollection, function(err, result) {
-            assert.equal(err, null, "failed to drop nyparking_signs collection " + err);
+            if (err && err.message !== 'ns not found')
+                assert.equal(err, null, "failed to drop nyparking_signs collection " + err);
 
             return cb(null);
         })
