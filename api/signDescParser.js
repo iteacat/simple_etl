@@ -7,7 +7,8 @@
 var logger = require('../common/logger');
 var assert = require('assert');
 
-var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:HOUR PARKING)|(?:\bHMP\b)|(?:\b(?:HR|HOUR)\s+(?:METERED|MUNI-METER) PARKING\b))/g;
+var regType = /((?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:HOUR PARKING)|(?:\bHMP\b)|(?:\b(?:HR|HOUR)\s+(?:METERED|MUNI-METER)\s+PARKING\b))/g;
+var regTypeWithHour = /(?:NO PARKING)|(?:NO STANDING)|(?:NO STOPPING)|(?:\b\d{1,2}\s+(?:(?:\bHOUR PARKING\b)|(?:\bHMP\b)|(?:\b(?:HR|HOUR)\s+(?:METERED|MUNI-METER)\s+PARKING\b)))/g;
 var regHourMeteredParking = /((?:\bHMP\b)|(?:\b(?:HR|HOUR)\s+(?:METERED|MUNI-METER) PARKING\b))/g;
 var regHourParking = /HOUR\s+PARKING/g;
 var regHour = /(\b\d{1,2})\s+(?:(?:\bHOUR PARKING\b)|(?:\bHMP\b)|(?:\b(?:HR|HOUR) (?:METERED|MUNI-METER) PARKING\b))/g;
@@ -148,7 +149,7 @@ var getTimeFrame = function (dayOfWeek, timeFrame) {
     return ret;
 };
 
-var parseTimeRanges = function(str) {
+var parseTimeRanges = function (str) {
     var ret1 = null;
     var timeRanges = [];
     while ((ret1 = regTimeRange.exec(str)) !== null) {
@@ -167,10 +168,11 @@ var parseTimeRanges = function(str) {
  * output: [[TUES THURS FRI], [SAT SUN]]
  *
  * */
-var parseDayOfWeekList = function(str) {
+var parseDayOfWeekList = function (str) {
     var copyStr = str;
     // First filter the Day of Week ranges
     var filterThru = regWeekDay.source + /\s*/.source + /(?:\bTHRU\b|-|\bTO\b)/.source + /\s*/.source + regWeekDay.source;
+
     function replacer(match) {
         var mask = '';
         for (var i = 0; i < match.length; i++) {
@@ -178,6 +180,7 @@ var parseDayOfWeekList = function(str) {
         }
         return mask;
     }
+
     copyStr = copyStr.replace(new RegExp(filterThru, 'g'), replacer);
 
     var regStr = /\bEXCEPT\b\s+/.source + regWeekDay.source;
@@ -186,7 +189,7 @@ var parseDayOfWeekList = function(str) {
 
     var days = [];
     var temp = null;
-    while((temp = regWeekDay.exec(copyStr)) !== null) {
+    while ((temp = regWeekDay.exec(copyStr)) !== null) {
         days.push({
             type: 'DAY',
             value: [temp[1]],
@@ -198,7 +201,7 @@ var parseDayOfWeekList = function(str) {
     return days;
 }
 
-var getDays = function(fromDay, toDay) {
+var getDays = function (fromDay, toDay) {
     var days = [];
     for (var i = dayToInt[fromDay]; i <= dayToInt[toDay]; i++) {
         days.push(intToDay[i]);
@@ -235,7 +238,7 @@ var parseDayOfWeekRanges = function (str) {
     return result;
 }
 
-var parseExceptDay = function(str) {
+var parseExceptDay = function (str) {
     var regStr = /\bEXCEPT\b\s+/.source + regWeekDay.source;
     var reg = new RegExp(regStr, 'g');
     var result = [];
@@ -257,7 +260,7 @@ var parseExceptDay = function(str) {
     return result;
 }
 
-var parseAll = function(str) {
+var parseAllTimeRanges = function (str) {
     var ret = [];
 
     var temp = null;
@@ -284,7 +287,7 @@ var parseAll = function(str) {
     if (ret.length < 1)
         return null;
 
-    ret.sort(function(a, b) {
+    ret.sort(function (a, b) {
         return a.index - b.index;
     });
 
@@ -304,8 +307,8 @@ var parseAll = function(str) {
             times.push(ret[i].value);
 
         if (state === 2 && (i === ret.length - 1 || ret[i].type !== ret[i + 1].type)) {
-            times.forEach(function(time) {
-                days.forEach(function(day) {
+            times.forEach(function (time) {
+                days.forEach(function (day) {
                     calculatedTimeFrames.push(getTimeFrame(day, time));
                     //calculatedTimeFrames.push(day);
                     //calculatedTimeFrames.push(time);
@@ -320,19 +323,19 @@ var parseAll = function(str) {
     return calculatedTimeFrames;
 }
 
-var replaceIncludingSunday = function(str) {
+var replaceIncludingSunday = function (str) {
     return str.replace(/INCLUDING\s+(?:SUNDAY|SUN)/, 'SUN MON TUES WED THURS FRI SAT');
 }
 
-var normalizeHourParking = function(str) {
+var normalizeHourParking = function (str) {
     return str.replace(regHourParking, TYPE.HP);
 }
 
-var normalizeHourMeteredParking = function(str) {
+var normalizeHourMeteredParking = function (str) {
     return str.replace(regHourMeteredParking, TYPE.HMP);
 }
 
-var replaceAllDays = function(str) {
+var replaceAllDays = function (str) {
     return str.replace(/ALL\s+DAYS/, 'SUN MON TUES WED THURS FRI SAT');
 }
 
@@ -348,8 +351,10 @@ var generalMatch = function (str) {
     while ((ret1 = regType.exec(str)) !== null) {
         types.push(ret1[1]);
     }
-    if (types.length !== 1)
+    if (types.length !== 1) {
+        logger.warn('multiple regTypes [%s] for %s. Skipped', types, str);
         return null;
+    }
 
     var timeRange = [];
     while ((ret1 = regTimeRange.exec(str)) !== null) {
@@ -382,7 +387,7 @@ var generalMatch = function (str) {
     // filter INCLUDING SUNDAY
     //var filterIncluding = /INCLUDING SUNDAY|SUN/g;
     //if (filterIncluding.test(str))
-      //  return null;
+    //  return null;
 
     var timeFrames = [];
     weekDays.forEach(function (dayOfWeek) {
@@ -396,7 +401,7 @@ var generalMatch = function (str) {
     }
 }
 
-var match1 = function(str) {
+var match1 = function (str) {
     if (!str)
         return null;
     str = preprocess(str);
@@ -423,7 +428,7 @@ function getSingleHour(str) {
 }
 
 // NO PARKING/STOPPING/STANDING ANYTIME
-var match2 = function(str) {
+var match2 = function (str) {
     if (!str)
         return null;
     str = preprocess(str);
@@ -439,14 +444,14 @@ var match2 = function(str) {
         return null;
     }
 
-    return {
+    return [{
         type: types[0],
         timeFrames: [[0, 1440 * 7]],
         hour: null
-    };
+    }];
 }
 
-var match1Except = function(type, exceptDay, timeRange) {
+var match1Except = function (type, exceptDay, timeRange) {
     var timeFrames = [];
     for (var i = 0; i <= 6; i++) {
         if (dayToInt[exceptDay] !== i) {
@@ -460,7 +465,7 @@ var match1Except = function(type, exceptDay, timeRange) {
     };
 };
 
-var match1Thru = function(type, dayOfWeekFrom, dayOfWeekTo, timeRange) {
+var match1Thru = function (type, dayOfWeekFrom, dayOfWeekTo, timeRange) {
     var timeFrames = [];
     for (var i = dayToInt[dayOfWeekFrom]; i <= dayToInt[dayOfWeekTo]; i++) {
         timeFrames.push(getTimeFrame(intToDay[i], timeRange));
@@ -473,11 +478,11 @@ var match1Thru = function(type, dayOfWeekFrom, dayOfWeekTo, timeRange) {
 };
 
 var removeCommercialVehicles = function (str) {
-    var tokens =  str.split(/COMMERCIAL VEHICLES ONLY OTHERS/);
+    var tokens = str.split(/COMMERCIAL VEHICLES ONLY OTHERS/);
     return tokens.length > 1 ? tokens[1] : str;
 }
 
-var match3 = function(str) {
+var match3 = function (str) {
     if (!str)
         return null;
     str = preprocess(str);
@@ -485,36 +490,88 @@ var match3 = function(str) {
     if (isUncertain1(str))
         return null;
 
-    var timeRanges =  parseAll(str);
-    if (!timeRanges || timeRanges.length === 0)
+    var types = getTypes(str);
+    if (!types) {
+        logger.debug('regType not identified for %s. Skipped', str);
         return null;
+    }
 
-    var type = getSingleType(str);
-    if (!type)
-        return null;
+    var results = [];
 
-    var hour = getSingleHour(str);
+    var subStrs = getDescForEachRegType(str, types);
 
-    return {
-        type: type,
-        timeFrames: timeRanges,
-        hour: hour
-    };
+    subStrs.forEach(function (subStr) {
+        if (subStr.trim() === '') {
+            // stop processing for this iteration
+            return;
+        }
+
+        var timeRanges = parseAllTimeRanges(subStr);
+
+        if (!timeRanges || timeRanges.length === 0) {
+            results.push(null);
+
+            // stop processing for this iteration
+            return;
+        }
+
+        var subTypes = getTypes(subStr);
+        if (!subTypes) {
+            // e.g: 'TRUCK (SYMBOL) TRUCK LOADING ONLY MONDAY-FRIDAY NOON-2PM <-> 1 HMP MONDAY-FRIDAY 8:30AM-NOON 2PM-7PM SATURDAY 8:30AM-7PM <->'
+            return;
+        }
+
+        assert.notEqual(subTypes, null, 'for: ' + str);
+        assert.equal(subTypes.length, 1, 'for: ' + str);
+
+        var hour = getSingleHour(subStr);
+
+        results.push(
+            {
+                type: subTypes[0],
+                timeFrames: timeRanges,
+                hour: hour,
+                subDesc: subStr
+            }
+        );
+    });
+
+    return results;
 }
 
-var getSingleType = function(str) {
+/**
+ * This may return empty string.
+ * An example of valid return is
+ * [ ' ',
+ *   'NO STANDING M-F 7AM-6PM --> ',
+ *   '6 HMP M-F 6PM-MIDNIGHT SATURDAY 8AM-MIDNIGHT -->' ]
+ * @param str
+ * @param regTypes
+ * @returns {Array}
+ */
+var getDescForEachRegType = function(str, regTypes) {
+    var mask = '458271834';
+    var replacer = function(match) {
+        return mask + match;
+    }
+    var temp = str.replace(regTypeWithHour, replacer);
+    return temp.split(mask);
+};
+
+var getTypes = function (str) {
     var types = [];
     var ret1;
     while ((ret1 = regType.exec(str)) !== null) {
         types.push(ret1[1]);
     }
-    if (types.length !== 1)
+    if (types.length < 1) {
         return null;
+    }
 
-    return types[0];
+    return types;
 }
 
-var preprocess = function(str) {
+var preprocess = function (str) {
     str = replaceIncludingSunday(str);
     str = replaceAllDays(str);
     str = removeCommercialVehicles(str);
@@ -523,12 +580,12 @@ var preprocess = function(str) {
     return str;
 }
 
-var isUncertain1 = function(str) {
+var isUncertain1 = function (str) {
     return regUncertain1.test(str);
 }
 
 module.exports = {
-    match1: match1,
+    //match1: match1,
     match2: match2,
     match3: match3
 };

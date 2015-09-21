@@ -15,6 +15,13 @@ var populate = function(file, dao, cb) {
             if (line.length === 0)
                 return t.resume();
 
+            var dbLine;
+            try {
+                dbLine = JSON.parse(line);
+            } catch (ex) {
+                console.error('when processing line: ' + line, ex);
+            }
+
             dao.saveRecord(JSON.parse(line), function(err) {
                 if (err)
                     console.error('error when saving record ', line);

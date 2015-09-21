@@ -24,7 +24,8 @@ filterTransform._transform = function (chunk, encoding, done) {
 
     var signDesc = tokens[8];
 
-    var result = parser.match1(signDesc) || parser.match2(signDesc) || parser.match3();
+    // an array of result was returned as for one descrition, it may contain multiple regTypes
+    var results = parser.match2(signDesc) || parser.match3(signDesc);
 
     var line = {
         loc: {
@@ -39,34 +40,53 @@ filterTransform._transform = function (chunk, encoding, done) {
         side: tokens[9]
     }
 
-    if (result) {
-        line = _.merge(line,
-            {
-                signType: result.type,
-                signHour: result.hour,
-                signTimeRanges: result.timeFrames
-            });
-        calculated++;
-    }
+    var _this = this;
+    if (results && results.length >= 1) {
+        results.forEach(function (eachResult) {
+            var curLine;
+            if (eachResult) {
+                curLine = _.merge(line,
+                    {
+                        signType: eachResult.type,
+                        signHour: eachResult.hour,
+                        signTimeRanges: eachResult.timeFrames,
+                        // subDesc is the sign description if the original description have multiple regTypes
+                        subDesc: (eachResult.subDesc ? eachResult.subDesc : null)
+                    });
+                _this.push(JSON.stringify(curLine) + '\n');
+                calculated++;
+            }
 
-    this.push(JSON.stringify(line) + '\n');
+        });
+    } else {
+        _this.push(JSON.stringify(_.merge(line,
+                {
+                    signType: null,
+                    signHour: null,
+                    signTimeRanges: null,
+                    subDesc: null
+                }
+            )) + '\n');
+    }
 
     done();
 }
 
-module.exports = function (callback) {
+var generateParkingRule = function (callback) {
     var readStream = fs.createReadStream(config.nyparkingDumpFile);
     var writeStream = fs.createWriteStream(config.nyparkingDumpFileWithTimes);
 
     var finalStream = readStream.pipe(split()).pipe(filterTransform).pipe(writeStream);
 
     finalStream.on('finish', function () {
-        console.log('done with %d of %d lines', calculated, total);
+        console.log('Identified %d lines of sign descriptions with a total of %d lines', calculated, total);
         callback(null);
     })
 
-    finalStream.on('error', function(err) {
+    finalStream.on('error', function (err) {
         console.error('Error when calculating sign time ranges');
         callback(err);
     })
-}
+};
+
+module.exports = generateParkingRule;
