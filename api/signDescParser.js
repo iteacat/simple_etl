@@ -320,6 +320,10 @@ var parseAllTimeRanges = function (str) {
         }
     }
 
+    calculatedTimeFrames.sort(function(a, b) {
+        return a[0] - b[0];
+    });
+
     return calculatedTimeFrames;
 }
 
@@ -500,17 +504,10 @@ var match3 = function (str) {
 
     var subStrs = getDescForEachRegType(str, types);
 
+    var numEffectiveSubDescs = 0;
+
     subStrs.forEach(function (subStr) {
         if (subStr.trim() === '') {
-            // stop processing for this iteration
-            return;
-        }
-
-        var timeRanges = parseAllTimeRanges(subStr);
-
-        if (!timeRanges || timeRanges.length === 0) {
-            results.push(null);
-
             // stop processing for this iteration
             return;
         }
@@ -521,11 +518,18 @@ var match3 = function (str) {
             return;
         }
 
+        var timeRanges = parseAllTimeRanges(subStr);
+        if (!timeRanges || timeRanges.length === 0) {
+            // stop processing for this iteration
+            return;
+        }
+
         assert.notEqual(subTypes, null, 'for: ' + str);
         assert.equal(subTypes.length, 1, 'for: ' + str);
 
         var hour = getSingleHour(subStr);
 
+        numEffectiveSubDescs++;
         results.push(
             {
                 type: subTypes[0],
@@ -535,6 +539,11 @@ var match3 = function (str) {
             }
         );
     });
+
+    // When there is only one signType, keep the original string instead
+    if (numEffectiveSubDescs === 1) {
+        results[0].subDesc = null;
+    }
 
     return results;
 }
