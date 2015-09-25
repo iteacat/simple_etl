@@ -331,6 +331,10 @@ var replaceIncludingSunday = function (str) {
     return str.replace(/INCLUDING\s+(?:SUNDAY|SUN)/, 'SUN MON TUES WED THURS FRI SAT');
 }
 
+var replaceTypo = function (str) {
+    return str.replace(/NP\s+PARKING/, 'NO PARKING');
+}
+
 var normalizeHourParking = function (str) {
     return str.replace(regHourParking, TYPE.HP);
 }
@@ -581,6 +585,7 @@ var getTypes = function (str) {
 }
 
 var preprocess = function (str) {
+    str = replaceTypo(str);
     str = replaceIncludingSunday(str);
     str = replaceAllDays(str);
     str = removeCommercialVehicles(str);
