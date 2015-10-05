@@ -9,8 +9,8 @@ var path = require('path');
 var stream = require('stream');
 var split = require('split');
 
-var readStream = fs.createReadStream(path.join(process.cwd(), 'tmp', 'nyparking_signs.csv'));
-var writeStream = fs.createWriteStream(path.join(process.cwd(), 'tmp', 'matchMultipeTimeRanges.txt'));
+var readStream = fs.createReadStream(path.join(process.env.NODE_PATH, 'tmp', 'nyparking_signs.csv'));
+var writeStream = fs.createWriteStream(path.join(process.env.NODE_PATH, 'tmp', 'matchMultipeTimeRanges.txt'));
 
 var filterTransform = new stream.Transform({objectMode: true});
 filterTransform._transform = function (chunk, encoding, done) {

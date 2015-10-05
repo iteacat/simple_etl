@@ -58,7 +58,7 @@ var extractNyparking = function (callback) {
     var tableConfig = {
         name: tableDdl.NYPARKING
     }
-    var dest = path.join(process.env.PWD, 'tmp', 'nyparking_signs.csv');
+    var dest = path.join(process.env.NODE_PATH, 'tmp', 'nyparking_signs.csv');
     extract(tableConfig, dest, nyparkingTransformer, callback);
 }
 
@@ -76,7 +76,7 @@ function buildQuery(tableConfig) {
 }
 
 var unzipShapeFile = function (callback) {
-    var stream = fs.createReadStream(config.shapeFile).pipe(unzip.Extract({ path:'tmp/'}));
+    var stream = fs.createReadStream(config.shapeFile).pipe(unzip.Extract({ path:path.join(process.env.NODE_PATH, 'tmp/')}));
     stream.on('close', function() {
         callback();
     });

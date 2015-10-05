@@ -2,6 +2,7 @@
  * Created by yin on 5/12/15.
  */
 
+var assert = require('assert');
 var async = require('async');
 var logger = require('../common/logger');
 var config = require('../config/index');
@@ -14,12 +15,22 @@ var generateParkingRule = require('../api/generateParkingRule');
 var path = require('path');
 var populateParkingSignsToDb = require('../api/populateParkingSignsToDb');
 var nyparkingDao = require('../api/nyparkingDao');
+var mongoDao = require('../common/mongoDao');
+
+assert.notEqual(process.env.NODE_ENV, null, 'NODE_ENV not set');
+assert.notEqual(process.env.NODE_PATH, null, 'NODE_PATH not set');
 
 logger.info(config);
 console.time('TotalExecutionTime');
 async.series(
     [
-        async.apply(mkdirp, path.join(process.env.PWD, 'tmp')),
+        // test if mongo db is connected
+        function(cb) {
+            mongoDao.getDb(function(err, db) {
+                return cb(err, db);
+            })
+        },
+        async.apply(mkdirp, path.join(process.env.NODE_PATH, 'tmp')),
         function (callback) {
             async.parallel([
                 // from -> to
@@ -48,3 +59,5 @@ async.series(
         process.exit(0);
     }
 );
+
+
