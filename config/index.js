@@ -11,12 +11,6 @@ var all = {
         multipleStatements : true
     }
 
-    ,mongoDbConfig: {
-        baseUrl: 'mongodb://localhost:27017/cat1ny?',
-        poolSize: 100,
-        autoReconnect: true
-    }
-
     ,signsFile: path.join(process.env.NODE_PATH, 'tmp', 'signs.csv')
     ,signsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/signs.CSV'
 

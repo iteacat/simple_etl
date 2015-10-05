@@ -14,4 +14,10 @@ module.exports = {
         connectionLimit : 20,
         port: '3306'
     }
+
+    ,mongoDbConfig: {
+        baseUrl: 'mongodb://localhost:27017/cat1ny?',
+        poolSize: 100,
+        autoReconnect: true
+    }
 };
