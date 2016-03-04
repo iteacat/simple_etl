@@ -11,18 +11,18 @@ var all = {
         multipleStatements : true
     }
 
-    ,signsFile: path.join(process.env.NODE_PATH, 'tmp', 'signs.csv')
+    ,signsFile: path.join(process.cwd(), 'tmp', 'signs.csv')
     ,signsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/signs.CSV'
 
-    ,locationsFile: path.join(process.env.NODE_PATH, 'tmp', 'locations.csv')
+    ,locationsFile: path.join(process.cwd(), 'tmp', 'locations.csv')
     ,locationsFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/locations.CSV'
 
-    ,shapeFile: path.join(process.env.NODE_PATH, 'tmp', 'shapefile.zip')
-    ,shapeFileUnzipped: path.join(process.env.NODE_PATH, 'tmp', 'Parking_Regulation_Shapefile', 'Parking_Regulations.shp')
+    ,shapeFile: path.join(process.cwd(), 'tmp', 'shapefile.zip')
+    ,shapeFileUnzipped: path.join(process.cwd(), 'tmp', 'Parking_Regulation_Shapefile', 'Parking_Regulations_Shapefile.shp')
     ,shapeFileUrl: 'http://a841-dotweb01.nyc.gov/datafeeds/ParkingReg/Parking_Regulation_Shapefile.zip'
 
-    ,nyparkingDumpFile: path.join(process.env.NODE_PATH, 'tmp', 'nyparking_signs.csv')
-    ,nyparkingDumpFileWithTimes: path.join(process.env.NODE_PATH, 'tmp', 'nyparking_signs_with_times.txt')
+    ,nyparkingDumpFile: path.join(process.cwd(), 'tmp', 'nyparking_signs.csv')
+    ,nyparkingDumpFileWithTimes: path.join(process.cwd(), 'tmp', 'nyparking_signs_with_times.txt')
 };
 
 var config= _.merge(

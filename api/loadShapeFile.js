@@ -10,12 +10,9 @@ var fs = require('fs');
 var JSONStream = require('JSONStream');
 var linebyline = require('line-by-line');
 var config = require('../config/index');
-var etlCommon = require('../common/etlCommon');
 var logger = require('../common/logger');
 var stream = require('stream');
 
-var queryBuffer = [];
-var updateCounter = 0;
 var locationMap;
 
 var signsTransformer = new stream.Transform({objectMode: true});
@@ -111,13 +108,13 @@ var load = function (callback) {
 }
 
 var loadLocationFileToCache = function (locationFileDir, cb) {
-    let locationMap = new Map();
+    const locationMap = new Map();
 
-    let locStream = new linebyline(config.locationsFile);
+    const locStream = new linebyline(config.locationsFile);
 
     locStream
         .on('line', function (data) {
-            let line = data.split(',');
+            const line = data.split(',');
             locationMap.set(JSON.stringify({boro: line[0], orderNumber: line[1]}), line[5]);
         })
         .on('error', function (err) {

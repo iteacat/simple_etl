@@ -17,8 +17,9 @@ var populateParkingSignsToDb = require('../api/populateParkingSignsToDb');
 var nyparkingDao = require('../api/nyparkingDao');
 var mongoDao = require('../common/mongoDao');
 
+var appRoot = process.cwd();
+
 assert.notEqual(process.env.NODE_ENV, null, 'NODE_ENV not set');
-assert.notEqual(process.env.NODE_PATH, null, 'NODE_PATH not set');
 
 logger.info(config);
 console.time('TotalExecutionTime');
@@ -30,7 +31,7 @@ async.series(
                 return cb(err, db);
             })
         },
-        async.apply(mkdirp, path.join(process.env.NODE_PATH, 'tmp')),
+        async.apply(mkdirp, path.join(process.cwd(), 'tmp')),
         function (callback) {
             async.parallel([
                 // from -> to
