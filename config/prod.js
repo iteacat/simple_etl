@@ -14,7 +14,7 @@ module.exports = {
     }
 
     ,mongoDbConfig: {
-        baseUrl: 'mongodb://cat1ny:27017/cat1ny?',
+        baseUrl: 'mongodb://localhost:27017/cat1ny?',
         poolSize: 100,
         autoReconnect: true
     }
